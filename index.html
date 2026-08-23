@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Advance Nay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="description" content="บันทึกเงิน advance หน้างาน — Ten Ten Ten Co., Ltd">
+
+<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Advance Nay">
+<meta name="theme-color" content="#0A0908">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Bai+Jamjuree:wght@500;600;700&display=swap">
+
+<style>
+:root{
+  --ink:#0A0908;
+  --panel:#16140F;
+  --panel-2:#211E17;
+  --line:#2E2A22;
+  --line-soft:#221F19;
+  --text:#F7F2E7;
+  --muted:#A2988A;
+  --muted-dim:#6F675C;
+  --amber:#FFC634;
+  --orange:#FF6B1A;
+  --grad:linear-gradient(104deg,#FFD54A 0%,#FFA318 46%,#FF6B1A 100%);
+  --danger:#FF5B4A;
+  --red:#D9342A;
+  --red-deep:linear-gradient(104deg,#C42B1E 0%,#8E1408 100%);
+  --good:#5FD89B;
+  --pad:16px;
+  --f-ui:"Anuphan",-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  --f-num:"Bai Jamjuree","Anuphan",-apple-system,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--ink)}
+body{
+  margin:0;background:var(--ink);color:var(--text);
+  font-family:var(--f-ui);font-size:16px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(28px + env(safe-area-inset-bottom));
+}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:8px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.wrap{max-width:480px;margin:0 auto;padding:0 var(--pad)}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:30;background:rgba(10,9,8,.88);
+  backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
+  border-bottom:1px solid var(--line-soft);padding-top:env(safe-area-inset-top);
+}
+.topbar .row{display:flex;align-items:center;gap:11px;padding:10px 0}
+.mark{width:32px;height:32px;border-radius:9px;flex:none;background:#111;box-shadow:0 0 0 1px var(--line)}
+.who{display:flex;flex-direction:column;min-width:0;flex:1}
+.who b{font-size:15px;font-weight:600;line-height:1.2}
+.who span{font-size:11px;color:var(--muted-dim);letter-spacing:.09em;text-transform:uppercase;font-weight:500}
+.savechip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:5px 10px;white-space:nowrap}
+.savechip .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-dim);flex:none}
+.savechip[data-s="saving"] .dot{background:var(--amber);animation:pulse 1s infinite}
+.savechip[data-s="saved"] .dot{background:var(--good)}
+.savechip[data-s="err"] .dot{background:var(--danger)}
+@keyframes pulse{50%{opacity:.25}}
+
+/* ---------- balance ---------- */
+.balance{position:relative;margin-top:13px;border-radius:20px;padding:15px 17px 14px;
+  background:var(--grad);color:#140C02;overflow:hidden;box-shadow:0 14px 32px -20px rgba(255,122,24,.8)}
+.balance::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 88% 6%,rgba(255,255,255,.4),transparent 60%)}
+.balance .lab{font-size:11.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;opacity:.62}
+.balance .big{font-family:var(--f-num);font-weight:700;font-size:40px;line-height:1.05;letter-spacing:-.02em;
+  margin:1px 0 11px;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:5px}
+.balance .big .cur{font-size:21px;font-weight:600;opacity:.55}
+.balance.neg .big{color:#5B1508}
+.bsplit{display:flex;gap:9px}
+.bsplit div{flex:1;background:rgba(20,12,2,.11);border-radius:11px;padding:8px 10px}
+.bsplit span{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.6}
+.bsplit b{font-family:var(--f-num);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- form card ---------- */
+.form{margin-top:14px;background:var(--panel);border:1px solid var(--line-soft);border-radius:20px;padding:14px}
+.form.editing{border-color:var(--amber)}
+.editbar{display:none;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--amber)}
+.form.editing .editbar{display:flex}
+.editbar .sp{flex:1}
+.editbar button{font-size:13px;font-weight:600;color:var(--muted)}
+.editbar .del{color:var(--danger)}
+
+.seg{display:flex;gap:7px}
+.seg button{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 6px;font-size:15px;font-weight:600;
+  color:var(--muted);transition:background .15s,color .15s,border-color .15s}
+.seg button[aria-pressed="true"]{border-color:var(--text);background:var(--text);color:#0A0908}
+#f-type button[data-v="out"][aria-pressed="true"]{border-color:var(--red);background:var(--red);color:#fff}
+#f-type button[data-v="in"][aria-pressed="true"]{border-color:var(--good);background:var(--good);color:#04150C}
+
+.amtbox{margin-top:11px;border:1px solid var(--line);border-radius:16px;background:var(--panel-2);
+  padding:12px 15px;display:flex;align-items:center;gap:8px;transition:border-color .18s}
+.amtbox:focus-within{border-color:var(--amber)}
+.amtbox .cur{font-family:var(--f-num);font-size:24px;font-weight:600;color:var(--muted-dim)}
+.amtbox input{flex:1;min-width:0;border:0;background:none;outline:none;font-family:var(--f-num);
+  font-size:36px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;padding:0}
+.amtbox input::placeholder{color:var(--line)}
+
+.flabel{display:block;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted-dim);margin:14px 0 7px}
+.daterow{display:flex;gap:7px}
+.dayin{width:74px;flex:none;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;
+  padding:11px 8px;font-family:var(--f-num);font-size:19px;font-weight:600;text-align:center;outline:none;
+  font-variant-numeric:tabular-nums;transition:border-color .18s;-webkit-appearance:none;appearance:none}
+.dayin:focus{border-color:var(--amber)}
+.dayin::placeholder{color:var(--muted-dim)}
+.mbtn{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 6px;font-size:15px;font-weight:600;
+  color:var(--muted);transition:.15s}
+.mbtn[aria-pressed="true"]{border-color:var(--text);background:var(--text);color:#0A0908}
+
+.txt{width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;
+  padding:12px 13px;font-size:15.5px;outline:none;transition:border-color .18s}
+.txt:focus{border-color:var(--amber)}
+.txt::placeholder{color:var(--muted-dim)}
+
+.sliprow{display:flex;gap:10px;align-items:center;margin-top:12px}
+.slipbtn{flex:1;border:1px dashed var(--line);border-radius:13px;padding:12px;display:flex;align-items:center;
+  justify-content:center;gap:8px;font-size:14px;font-weight:600;color:var(--muted)}
+.slipbtn:active{background:var(--panel-2)}
+.thumb{position:relative;flex:none}
+.thumb img{width:58px;height:58px;object-fit:cover;border-radius:11px;border:1px solid var(--line);display:block;cursor:zoom-in}
+.thumb button{position:absolute;top:-7px;right:-7px;width:23px;height:23px;border-radius:50%;background:var(--danger);
+  color:#fff;display:grid;place-items:center;font-size:14px;font-weight:700;line-height:1}
+
+.btn-save{width:100%;margin-top:13px;background:var(--red-deep);color:#fff;font-weight:700;font-size:16.5px;
+  border-radius:14px;padding:14px;box-shadow:0 12px 24px -16px rgba(196,43,30,.95)}
+.btn-save[disabled]{opacity:.3;box-shadow:none}
+.btn-save:active:not([disabled]){transform:translateY(1px)}
+
+/* ---------- month tabs ---------- */
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:24px 0 9px}
+.shead h2{margin:0;font-size:12.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.shead .tot{font-family:var(--f-num);font-size:13px;font-weight:600;color:var(--muted)}
+.months{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
+  margin:0 calc(var(--pad) * -1);padding:2px var(--pad)}
+.months::-webkit-scrollbar{display:none}
+.mchip{flex:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13.5px;
+  font-weight:500;color:var(--muted);white-space:nowrap;transition:.15s}
+.mchip[aria-pressed="true"]{background:var(--text);border-color:var(--text);color:#0A0908;font-weight:600}
+.mchip .n{font-family:var(--f-num);opacity:.55;margin-left:5px;font-size:12px}
+
+/* ---------- list ---------- */
+.list{margin-top:10px;background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;overflow:hidden}
+.item{display:grid;grid-template-columns:42px 1fr auto;gap:11px;align-items:center;width:100%;text-align:left;
+  padding:11px 13px;border-bottom:1px solid var(--line-soft);transition:background .13s}
+.item:last-child{border-bottom:0}
+.item:active{background:var(--panel-2)}
+.item.hi{animation:hi 1.3s ease-out}
+@keyframes hi{0%,40%{background:rgba(255,198,52,.16)}100%{background:transparent}}
+.item .dt{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--panel-2);
+  border-radius:10px;padding:5px 0;line-height:1.05}
+.item .dt b{font-family:var(--f-num);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.item .dt span{font-size:9.5px;color:var(--muted-dim);font-weight:600}
+.item .mid{min-width:0}
+.item .ttl{font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub{display:block;font-size:11.5px;color:var(--muted-dim);margin-top:1px}
+.item .sub .pic{color:var(--amber)}
+.item .val{font-family:var(--f-num);font-size:16.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em;white-space:nowrap}
+.item.in .val{color:var(--good)}
+
+.empty{border:1px dashed var(--line);border-radius:16px;padding:26px 20px;text-align:center;color:var(--muted-dim);
+  font-size:13.5px;margin-top:10px}
+
+/* ---------- tools ---------- */
+.note{display:flex;gap:9px;align-items:flex-start;margin-top:22px;padding:12px 13px;border-radius:13px;
+  background:rgba(255,198,52,.07);border:1px solid rgba(255,198,52,.25);font-size:12.5px;line-height:1.5;color:var(--muted)}
+.note b{display:block;color:var(--amber);font-weight:600;margin-bottom:1px}
+.note[hidden]{display:none}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.tool.wide{grid-column:1/-1;justify-content:center;background:var(--panel-2);border-color:var(--line)}
+.tool.wide svg{color:var(--amber)}
+.tool{border:1px solid var(--line);border-radius:13px;padding:12px;display:flex;align-items:center;gap:9px;
+  font-size:14px;font-weight:600;color:var(--text);background:var(--panel);text-align:left}
+.tool:active{background:var(--panel-2)}
+.tool svg{flex:none;color:var(--amber)}
+.meta{margin:14px 0 4px;font-size:11.5px;color:var(--muted-dim);text-align:center;line-height:1.7}
+
+/* ---------- overlays ---------- */
+.lightbox[hidden]{display:none}
+.lightbox{position:fixed;inset:0;z-index:90;background:rgba(4,3,2,.94);display:grid;place-items:center;padding:20px}
+.lightbox img{max-width:100%;max-height:86dvh;border-radius:12px;object-fit:contain}
+.lightbox button{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;width:40px;height:40px;
+  border-radius:50%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);font-size:22px;
+  line-height:1;display:grid;place-items:center}
+.sheet[hidden]{display:none}
+.sheet{position:fixed;inset:0;z-index:70;background:var(--ink);display:flex;flex-direction:column;
+  padding:calc(14px + env(safe-area-inset-top)) var(--pad) calc(14px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 10px;font-size:16px;font-weight:700}
+.pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--muted);flex:1;overflow:auto}
+.sheet .foot{display:flex;gap:9px;margin-top:11px}
+.sheet .foot button{flex:1;border:1px solid var(--line);border-radius:13px;padding:13px;font-weight:600}
+.sheet .foot .pri{background:var(--grad);color:#140C02;border-color:transparent}
+
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,14px);
+  background:var(--text);color:#0A0908;font-size:14px;font-weight:600;padding:10px 16px;border-radius:99px;
+  z-index:80;opacity:0;pointer-events:none;transition:.24s;box-shadow:0 10px 30px -12px rgba(0,0,0,.8);
+  max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="i-copy" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="8.4" y="8.4" width="11.2" height="11.2" rx="2.4"/><path d="M15.6 5.4H6.8A2.4 2.4 0 0 0 4.4 7.8v8.8"/></g>
+<g id="i-csv" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3.8v10.6M8 10.6l4 4 4-4"/><path d="M4.6 17.2v1.6a1.6 1.6 0 0 0 1.6 1.6h11.6a1.6 1.6 0 0 0 1.6-1.6v-1.6"/></g>
+<g id="i-cam" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3.6 8.6h3.2l1.4-2h7.6l1.4 2h3.2v10.2H3.6z"/><circle cx="12" cy="13.4" r="3.3"/></g>
+</defs></svg>
+
+<header class="topbar">
+  <div class="wrap row">
+    <img class="mark" id="mark" src="icon.png" alt="TenTenTen">
+    <span class="who"><b>สรุป Advance · Nay</b><span>Ten Ten Ten Co., Ltd</span></span>
+    <span class="savechip" id="savechip" data-s="local"><i class="dot"></i><em id="savetxt" style="font-style:normal">เก็บในเครื่อง</em></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="balance" id="bal">
+    <div class="lab">คงเหลือในมือ</div>
+    <div class="big num"><span class="cur">฿</span><span id="v-left">0</span></div>
+    <div class="bsplit">
+      <div><span>รับมา</span><b class="num" id="v-in">0</b></div>
+      <div><span>ใช้ไป</span><b class="num" id="v-out">0</b></div>
+    </div>
+  </section>
+
+  <section class="form" id="form">
+    <div class="editbar">
+      <span>กำลังแก้ไขรายการ</span><span class="sp"></span>
+      <button id="f-cancel">ยกเลิก</button><button class="del" id="f-del">ลบ</button>
+    </div>
+
+    <div class="seg" id="f-type">
+      <button data-v="out" aria-pressed="true">รายจ่าย</button>
+      <button data-v="in" aria-pressed="false">รายรับ</button>
+    </div>
+
+    <div class="amtbox"><span class="cur">฿</span>
+      <input id="f-amt" type="text" inputmode="decimal" pattern="[0-9]*" placeholder="0"
+             autocomplete="off" enterkeyhint="next" aria-label="จำนวนเงิน">
+    </div>
+
+    <span class="flabel">วันที่</span>
+    <div class="daterow">
+      <input class="dayin" id="f-day" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2"
+             autocomplete="off" enterkeyhint="next" aria-label="วันที่">
+      <button class="mbtn" id="f-m1" data-i="1" aria-pressed="true"></button>
+      <button class="mbtn" id="f-m0" data-i="0" aria-pressed="false"></button>
+    </div>
+
+    <span class="flabel" id="f-notelab">รายจ่ายอะไร</span>
+    <input class="txt" id="f-note" list="dl-note" placeholder="พิมพ์สั้นๆ เช่น ค่าแรงช่าง"
+           autocomplete="off" enterkeyhint="done">
+    <datalist id="dl-note"></datalist>
+
+    <div class="sliprow">
+      <button class="slipbtn" id="f-shot"><svg width="19" height="19"><use href="#i-cam"/></svg>แนบสลิป (ถ้ามี)</button>
+      <span class="thumb" id="f-thumb" hidden><img id="f-img" alt="สลิป"><button id="f-unimg" aria-label="ลบสลิป">×</button></span>
+    </div>
+    <input type="file" id="f-file" accept="image/*" style="display:none">
+
+    <button class="btn-save" id="f-save" disabled>บันทึก</button>
+  </section>
+
+  <div class="shead"><h2>รายการ</h2><span class="tot" id="mtot"></span></div>
+  <div class="months" id="months"></div>
+  <div id="feed"></div>
+
+  <div class="note" id="localnote" hidden><span>
+    <b>ยังไม่ได้ขึ้น Google Sheet</b>
+    ตอนนี้เก็บในเครื่องก่อน พอเน็ตกลับมาจะส่งขึ้นชีตให้เอง หรือแตะป้ายสถานะมุมขวาบนเพื่อลองใหม่ทันที
+  </span></div>
+
+  <div class="tools">
+    <button class="tool wide" id="btn-copy"><svg width="19" height="19"><use href="#i-copy"/></svg>คัดลอกสรุปส่งไลน์</button>
+    <button class="tool" id="btn-csv"><svg width="19" height="19"><use href="#i-csv"/></svg>ไฟล์ CSV</button>
+  </div>
+  <p class="meta" id="meta"></p>
+</main>
+
+<div class="lightbox" id="lightbox" hidden><img id="lb-img" alt="สลิปขนาดเต็ม"><button id="lb-x" aria-label="ปิด">×</button></div>
+
+<section class="sheet" id="sheet-t" hidden role="dialog" aria-modal="true" aria-labelledby="t-title">
+  <h3 id="t-title">สรุป</h3>
+  <pre class="pre" id="t-pre"></pre>
+  <div class="foot"><button id="t-close">ปิด</button><button class="pri" id="t-copy">คัดลอก</button></div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+
+<script>
+
+"use strict";
+
+const OWNER = "Nay";
+/* วาง Web app URL ของ Apps Script ตรงนี้ (ลงท้ายด้วย /exec) */
+const API = "https://script.google.com/macros/s/AKfycbxgYyo8cl_meb9mTMXX_X05yoXlMTrIloJ86bU_29wxy54dZyJeJLwUXA36fxgkhCWM/exec";
+const HAS_API = /^https:\/\/script\.google\.com\//.test(API);
+const LS = "ttt.advance.nay.v2";
+const LS_OLD = "ttt.advance.nay.v1";
+const START = "2026-09";           /* เดือนแรกของแถบเดือน — ก.ย. 69 */
+
+let S = {items: []};
+let month = null, monthPinned = false;   /* เดือนที่เลือกในแถบ */
+let editing = null;                /* id ที่กำลังแก้ */
+let fType = "out", fMonth = 1;     /* 1 = เดือนปัจจุบัน, 0 = เดือนก่อนหน้า */
+let draftPhoto = null;
+let online = HAS_API, cloudResolved = false, saveTimer = null, pushing = false;
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const now = () => Date.now();
+
+/* ---------- format ---------- */
+const nf0 = new Intl.NumberFormat("th-TH", {maximumFractionDigits:0});
+const nf2 = new Intl.NumberFormat("th-TH", {minimumFractionDigits:2, maximumFractionDigits:2});
+const money = v => Number.isInteger(v) ? nf0.format(v) : nf2.format(v);
+const TH_M = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const pad2 = n => String(n).padStart(2, "0");
+const iso = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const today = () => iso(new Date());
+const ymOf = s => s.slice(0, 7);
+function monthLabel(k){
+  const [y, m] = k.split("-").map(Number);
+  return `${TH_M[m-1]} ${pad2((y+543)%100)}`;
+}
+function shiftMonth(k, n){
+  let [y, m] = k.split("-").map(Number);
+  m += n;
+  y += Math.floor((m - 1) / 12); m = ((m - 1) % 12 + 12) % 12 + 1;
+  return `${y}-${pad2(m)}`;
+}
+const daysIn = k => { const [y, m] = k.split("-").map(Number); return new Date(y, m, 0).getDate(); };
+
+/* ---------- storage ---------- */
+function migrate(raw){
+  if (!raw) return null;
+  if (raw.items) return {items: raw.items};
+  if (raw.entries || raw.advances) {          /* โครงเดิม v1 */
+    const items = [];
+    (raw.entries || []).forEach(r => items.push({
+      id:r.id, type:"out", date:r.date, amount:+r.amount||0,
+      note:r.note || "", photo:r.photo || null,
+      createdAt:r.createdAt || 0, updatedAt:r.updatedAt || 0, deleted:!!r.deleted,
+    }));
+    (raw.advances || []).forEach(r => items.push({
+      id:r.id, type:r.back ? "out" : "in", date:r.date, amount:+r.amount||0,
+      note:r.note || (r.back ? "คืนเงินบริษัท" : "รับเงิน advance"), photo:null,
+      createdAt:r.createdAt || 0, updatedAt:r.updatedAt || 0, deleted:!!r.deleted,
+    }));
+    return {items};
+  }
+  return null;
+}
+function readLocal(){
+  for (const key of [LS, LS_OLD]) {
+    try { const r = migrate(JSON.parse(localStorage.getItem(key) || "null")); if (r) return r; }
+    catch(e){}
+  }
+  return null;
+}
+function writeLocal(){
+  try { localStorage.setItem(LS, JSON.stringify(S)); }
+  catch(e){ toast("พื้นที่ในเครื่องเต็ม — ลองลบสลิปเก่าออก"); }
+}
+function mergeInto(base, incoming){
+  const map = new Map(base.map(r => [r.id, r]));
+  for (const r of incoming || []) {
+    if (!r || !r.id) continue;
+    const cur = map.get(r.id);
+    if (!cur || (r.updatedAt || 0) > (cur.updatedAt || 0)) map.set(r.id, r);
+  }
+  return [...map.values()];
+}
+function chip(state, text){ $("#savechip").dataset.s = state; $("#savetxt").textContent = text; }
+function touch(){
+  writeLocal(); render();
+  if (!HAS_API) return;
+  chip("saving", "กำลังบันทึก");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(push, 1500);
+}
+async function push(){
+  if (!HAS_API || pushing) return;
+  pushing = true;
+  clearTimeout(saveTimer);
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      /* text/plain กัน preflight ที่ Apps Script ตอบไม่ได้ */
+      headers: {"Content-Type": "text/plain;charset=utf-8"},
+      body: JSON.stringify({items: S.items}),
+    });
+    const data = await res.json();
+    if (!data || !data.ok) throw new Error((data && data.error) || "sheet error");
+    absorb(data);
+    online = true;
+    chip("saved", "ซิงก์ชีตแล้ว");
+  } catch (err) {
+    online = false;
+    chip("err", "ออฟไลน์ · ยังไม่ขึ้นชีต");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(push, 20000);
+  } finally {
+    pushing = false;
+    render();
+  }
+}
+
+/* รับผลจากชีตมารวมกับของในเครื่อง — ของที่ updatedAt ใหม่กว่าชนะ */
+function absorb(data){
+  const dead = new Set(data.deleted || []);
+  S.items = mergeInto(data.items || [], S.items).filter(r => !dead.has(r.id));
+  writeLocal();
+}
+
+async function boot(){
+  const local = readLocal();
+  if (local) S = local;
+  resetForm(); render();
+
+  cloudResolved = true;
+  if (!HAS_API) { chip("local", "ยังไม่ต่อชีต"); render(); return; }
+
+  chip("saving", "กำลังเชื่อมชีต");
+  await push();                                  /* ส่งของในเครื่องขึ้น แล้วรับของทั้งหมดกลับมา */
+
+  setInterval(() => { if (!document.hidden) push(); }, 90000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) push(); });
+  $("#savechip").onclick = () => { chip("saving", "กำลังซิงก์"); push(); };
+  $("#savechip").style.cursor = "pointer";
+  $("#savechip").title = "แตะเพื่อซิงก์ทันที";
+}
+
+/* ---------- derive ---------- */
+const live = () => S.items.filter(r => !r.deleted);
+const sumOf = (a, t) => a.filter(r => r.type === t).reduce((s, r) => s + (+r.amount || 0), 0);
+
+function monthKeys(){
+  const keys = new Set(live().map(r => ymOf(r.date)));
+  const cur = ymOf(today());
+  let k = START;
+  const end = cur > START ? cur : START;
+  while (k <= end) { keys.add(k); k = shiftMonth(k, 1); }
+  return [...keys].sort();
+}
+
+/* ---------- render ---------- */
+function render(){
+  const all = live();
+  const got = sumOf(all, "in"), spent = sumOf(all, "out"), left = got - spent;
+  $("#v-left").textContent = left < 0 ? "-" + money(-left) : money(left);
+  $("#v-in").textContent = money(got);
+  $("#v-out").textContent = money(spent);
+  $("#bal").classList.toggle("neg", left < 0);
+
+  const keys = monthKeys();
+  const cur = ymOf(today());
+  const withRows = [...new Set(all.map(r => ymOf(r.date)))].sort();
+  if (!monthPinned) {
+    /* ยังไม่ได้เลือกเอง — เปิดมาให้เจอเดือนที่มีของก่อน (ข้อมูลอาจโหลดมาทีหลัง) */
+    month = withRows.includes(cur) ? cur
+          : withRows.length ? withRows[withRows.length - 1]
+          : keys.includes(cur) ? cur : keys[keys.length - 1];
+  } else if (!month || !keys.includes(month)) {
+    month = keys.includes(cur) ? cur : keys[keys.length - 1];
+  }
+  renderMonths(keys);
+
+  const rows = all.filter(r => ymOf(r.date) === month)
+    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.createdAt||0) - (a.createdAt||0));
+  const mOut = sumOf(rows, "out"), mIn = sumOf(rows, "in");
+  $("#mtot").textContent = rows.length
+    ? (mIn ? `รับ ฿${money(mIn)} · ใช้ ฿${money(mOut)}` : `ใช้ไป ฿${money(mOut)}`)
+    : "";
+
+  const feed = $("#feed");
+  feed.innerHTML = "";
+  if (!rows.length) {
+    feed.innerHTML = `<div class="empty">ยังไม่มีรายการในเดือน ${monthLabel(month)}</div>`;
+  } else {
+    const list = document.createElement("div");
+    list.className = "list";
+    rows.forEach(r => list.appendChild(rowEl(r)));
+    feed.appendChild(list);
+  }
+
+  const notes = [...new Set(all.map(r => r.note).filter(Boolean))].slice(-30).reverse();
+  $("#dl-note").innerHTML = notes.map(v => `<option value="${esc(v)}">`).join("");
+
+  $("#localnote").hidden = !(cloudResolved && (!HAS_API || !online));
+
+  const bytes = new Blob([JSON.stringify(S)]).size;
+  const parts = [`ทั้งหมด ${all.length} รายการ`];
+  if (bytes > 300 * 1024) parts.push(`ข้อมูล+สลิป ${(bytes/1024/1024).toFixed(1)} MB`);
+  $("#meta").textContent = parts.join(" · ");
+}
+
+function renderMonths(keys){
+  const box = $("#months");
+  box.innerHTML = "";
+  keys.forEach(k => {
+    const n = live().filter(r => ymOf(r.date) === k).length;
+    const b = document.createElement("button");
+    b.className = "mchip";
+    b.setAttribute("aria-pressed", String(k === month));
+    b.innerHTML = esc(monthLabel(k)) + (n ? `<span class="n">${n}</span>` : "");
+    b.onclick = () => { monthPinned = true; month = k; render(); };
+    box.appendChild(b);
+  });
+  const on = box.querySelector('[aria-pressed="true"]');
+  if (on) on.scrollIntoView({block:"nearest", inline:"center"});
+}
+
+function rowEl(r){
+  const d = r.date.split("-").map(Number);
+  const b = document.createElement("button");
+  b.className = "item" + (r.type === "in" ? " in" : "");
+  b.dataset.id = r.id;
+  b.innerHTML =
+    `<span class="dt"><b>${d[2]}</b><span>${esc(TH_M[d[1]-1])}</span></span>` +
+    `<span class="mid"><span class="ttl">${esc(r.note || (r.type === "in" ? "รับเงิน" : "รายจ่าย"))}</span>` +
+      (r.photo ? `<span class="sub"><i class="pic">มีสลิป</i></span>` : "") + `</span>` +
+    `<span class="val">${r.type === "in" ? "+" : ""}${money(+r.amount||0)}</span>`;
+  b.onclick = () => loadForEdit(r);
+  return b;
+}
+
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+/* ---------- form ---------- */
+function monthOptions(){
+  const cur = ymOf(today());
+  return [shiftMonth(cur, -1), cur];
+}
+function paintType(){
+  $$("#f-type button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === fType)));
+  const out = fType === "out";
+  $("#f-notelab").textContent = out ? "รายจ่ายอะไร" : "รับเงินจากใคร";
+  $("#f-note").placeholder = out ? "พิมพ์สั้นๆ เช่น ค่าแรงช่าง" : "พิมพ์สั้นๆ เช่น รับสดจากพี่บัญชี";
+}
+function paintMonths(){
+  const opts = monthOptions();
+  $$(".mbtn").forEach(b => {
+    const i = Number(b.dataset.i);
+    b.textContent = monthLabel(opts[i]);
+    b.setAttribute("aria-pressed", String(i === fMonth));
+  });
+}
+function setPhoto(url){
+  draftPhoto = url || null;
+  $("#f-thumb").hidden = !url;
+  if (url) $("#f-img").src = url;
+}
+function resetForm(){
+  editing = null;
+  $("#form").classList.remove("editing");
+  fType = "out"; fMonth = 1;
+  $("#form").dataset.keepYm = "";
+  $("#f-amt").value = ""; $("#f-note").value = "";
+  $("#f-day").value = String(new Date().getDate());
+  $("#f-file").value = "";
+  setPhoto(null); paintType(); paintMonths(); checkSave();
+  $("#f-save").textContent = "บันทึก";
+}
+function loadForEdit(r){
+  editing = r.id;
+  $("#form").classList.add("editing");
+  fType = r.type;
+  const opts = monthOptions(), ym = ymOf(r.date), idx = opts.indexOf(ym);
+  $("#form").dataset.keepYm = idx < 0 ? ym : "";    /* เดือนเก่ากว่า 2 เดือน — คงเดือนเดิมไว้ */
+  fMonth = idx < 0 ? 1 : idx;
+  $("#f-amt").value = String(r.amount);
+  $("#f-note").value = r.note || "";
+  $("#f-day").value = String(Number(r.date.slice(8)));
+  setPhoto(r.photo || null);
+  $("#f-file").value = "";
+  paintType(); paintMonths(); checkSave();
+  $("#f-save").textContent = "บันทึกการแก้ไข";
+  window.scrollTo({top:0, behavior:"smooth"});
+  $("#f-amt").focus({preventScroll:true});
+}
+function parseAmt(v){
+  const n = parseFloat(String(v).replace(/[^0-9.]/g, ""));
+  return isFinite(n) ? Math.round(n * 100) / 100 : 0;
+}
+function checkSave(){ $("#f-save").disabled = parseAmt($("#f-amt").value) <= 0; }
+
+$("#f-type").onclick = e => { const b = e.target.closest("button"); if (!b) return; fType = b.dataset.v; paintType(); };
+$("#months").addEventListener("wheel", e => { if (e.deltaY) { $("#months").scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
+$$(".mbtn").forEach(b => b.onclick = () => { fMonth = Number(b.dataset.i); paintMonths(); });
+$("#f-amt").oninput = checkSave;
+$("#f-amt").onkeydown = e => { if (e.key === "Enter") $("#f-note").focus(); };
+$("#f-note").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("#f-save").click(); } };
+$("#f-day").oninput = () => { $("#f-day").value = $("#f-day").value.replace(/[^0-9]/g, "").slice(0, 2); };
+
+$("#f-shot").onclick = () => $("#f-file").click();
+$("#f-unimg").onclick = () => { setPhoto(null); $("#f-file").value = ""; };
+$("#f-img").onclick = () => { $("#lb-img").src = $("#f-img").src; $("#lightbox").hidden = false; };
+$("#lb-x").onclick = () => { $("#lightbox").hidden = true; $("#lb-img").removeAttribute("src"); };
+$("#lightbox").onclick = e => { if (e.target.id !== "lb-img") $("#lb-x").click(); };
+$("#f-file").onchange = async e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  try { setPhoto(await shrink(f)); } catch(err){ toast("อ่านรูปไม่ได้ ลองใหม่อีกครั้ง"); }
+};
+function shrink(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = rej;
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = rej;
+      img.onload = () => {
+        const max = 1000, sc = Math.min(1, max / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        res(cv.toDataURL("image/jpeg", 0.55));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+$("#f-save").onclick = () => {
+  const amt = parseAmt($("#f-amt").value);
+  if (amt <= 0) { toast("ใส่จำนวนเงินก่อนนะ"); $("#f-amt").focus(); return; }
+  const keep = $("#form").dataset.keepYm;
+  const ym = keep || monthOptions()[fMonth];
+  const day = Math.min(Math.max(parseInt($("#f-day").value, 10) || new Date().getDate(), 1), daysIn(ym));
+  const date = `${ym}-${pad2(day)}`;
+  const base = {type:fType, amount:amt, date, note:$("#f-note").value.trim(), photo:draftPhoto, updatedAt:now()};
+
+  let id;
+  if (editing) { id = editing; Object.assign(S.items.find(x => x.id === editing), base); }
+  else { id = uid(); S.items.push({id, createdAt:now(), by:OWNER, ...base}); }
+
+  const wasEdit = !!editing, savedType = fType;
+  monthPinned = true; month = ym;
+  resetForm(); touch();
+  const el = document.querySelector(`.item[data-id="${id}"]`);
+  if (el) el.classList.add("hi");
+  toast(wasEdit ? "แก้ไขแล้ว" : (savedType === "in" ? `รับเงิน ฿${money(amt)}` : `บันทึก ฿${money(amt)} แล้ว`));
+};
+$("#f-cancel").onclick = () => { $("#form").dataset.keepYm = ""; resetForm(); };
+
+let delArmed = false, delTimer = null;
+$("#f-del").onclick = () => {
+  if (!editing) return;
+  if (!delArmed) {
+    delArmed = true; $("#f-del").textContent = "กดอีกครั้งเพื่อลบ";
+    delTimer = setTimeout(() => { delArmed = false; $("#f-del").textContent = "ลบ"; }, 3500);
+    return;
+  }
+  clearTimeout(delTimer); delArmed = false; $("#f-del").textContent = "ลบ";
+  const r = S.items.find(x => x.id === editing);
+  if (r) { r.deleted = true; r.photo = null; r.updatedAt = now(); }
+  $("#form").dataset.keepYm = "";
+  resetForm(); touch(); toast("ลบแล้ว");
+};
+
+/* ---------- export ---------- */
+function rowsOfMonth(){
+  return live().filter(r => ymOf(r.date) === month).sort((a, b) => a.date < b.date ? -1 : 1);
+}
+function summaryText(){
+  const rows = rowsOfMonth();
+  const mIn = sumOf(rows, "in"), mOut = sumOf(rows, "out");
+  const all = live(), left = sumOf(all, "in") - sumOf(all, "out");
+  const L = [`สรุป Advance — ${OWNER} · ${monthLabel(month)}`,
+             `รับ ฿${money(mIn)} · ใช้ ฿${money(mOut)}`,
+             `คงเหลือในมือ (สะสม) ฿${money(left)}`, ""];
+  rows.forEach(r => {
+    const d = r.date.split("-").map(Number);
+    L.push(`${d[2]} ${TH_M[d[1]-1]} | ${r.note || "-"} | ${r.type === "in" ? "+" : "-"}฿${money(+r.amount||0)}${r.photo ? " (มีสลิป)" : ""}`);
+  });
+  return L.join("\n");
+}
+function csvText(){
+  const rows = rowsOfMonth();
+  const q = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+  const out = [["วันที่","ประเภท","รายละเอียด","สลิป","จำนวนเงิน"].map(q).join(",")];
+  rows.forEach(r => out.push([
+    r.date, r.type === "in" ? "รายรับ" : "รายจ่าย", r.note || "", r.photo ? "มี" : "",
+    (+r.amount || 0).toFixed(2),
+  ].map(q).join(",")));
+  out.push("");
+  out.push([q("รวมรายรับ"), "", "", "", q(sumOf(rows, "in").toFixed(2))].join(","));
+  out.push([q("รวมรายจ่าย"), "", "", "", q(sumOf(rows, "out").toFixed(2))].join(","));
+  const all = live();
+  out.push([q("คงเหลือในมือ (สะสม)"), "", "", "", q((sumOf(all,"in") - sumOf(all,"out")).toFixed(2))].join(","));
+  return "﻿" + out.join("\r\n");
+}
+async function copyOut(text, okMsg){
+  try { await navigator.clipboard.writeText(text); toast(okMsg); return true; } catch(e){ return false; }
+}
+function showText(title, text){
+  $("#t-title").textContent = title; $("#t-pre").textContent = text;
+  $("#t-copy").dataset.text = text; $("#sheet-t").hidden = false;
+}
+$("#t-close").onclick = () => { $("#sheet-t").hidden = true; };
+$("#t-copy").onclick = () => copyOut($("#t-copy").dataset.text || "", "คัดลอกแล้ว");
+$("#btn-copy").onclick = async () => {
+  const t = summaryText();
+  if (!(await copyOut(t, "คัดลอกแล้ว ส่งเข้าไลน์ได้เลย"))) showText("สรุป (กดค้างเพื่อคัดลอก)", t);
+};
+$("#btn-csv").onclick = () => {
+  const data = csvText();
+  const name = `advance-${OWNER.toLowerCase()}-${month}.csv`;
+  try {
+    const url = URL.createObjectURL(new Blob([data], {type:"text/csv;charset=utf-8"}));
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    toast("ดาวน์โหลด CSV แล้ว");
+  } catch (e) {
+    copyOut(data, "คัดลอก CSV แล้ว วางในชีตได้เลย").then(ok => {
+      if (!ok) showText("CSV (กดค้างเพื่อคัดลอก)", data);
+    });
+  }
+};
+
+/* ---------- misc ---------- */
+let tt = null;
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg; el.classList.add("on");
+  clearTimeout(tt); tt = setTimeout(() => el.classList.remove("on"), 2100);
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (!$("#lightbox").hidden) $("#lb-x").click();
+  else if (!$("#sheet-t").hidden) $("#t-close").click();
+  else if (editing) $("#f-cancel").click();
+});
+
+boot();
+
+</script>
+</body>
+</html>
