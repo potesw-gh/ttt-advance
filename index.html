@@ -80,6 +80,11 @@ button{background:none;border:0;cursor:pointer}
 .balance::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(120% 90% at 88% 6%,rgba(255,255,255,.4),transparent 60%)}
 .balance .lab{font-size:11.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;opacity:.62}
+.balance .carry{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 0 10px;padding:7px 11px;border-radius:10px;background:rgba(20,12,2,.14)}
+.balance .carry[hidden]{display:none}
+.balance .carry span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.66}
+.balance .carry b{font-family:var(--f-num);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
 .balance .big{font-family:var(--f-num);font-weight:700;font-size:40px;line-height:1.05;letter-spacing:-.02em;
   margin:1px 0 11px;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:5px}
 .balance .big .cur{font-size:21px;font-weight:600;opacity:.55}
@@ -175,6 +180,11 @@ button{background:none;border:0;cursor:pointer}
 .item .val{font-family:var(--f-num);font-size:16.5px;font-weight:600;font-variant-numeric:tabular-nums;
   letter-spacing:-.01em;white-space:nowrap}
 .item.in .val{color:var(--good)}
+.item.open{background:var(--panel-2);cursor:default}
+.item.open .dt{background:transparent;border:1px dashed var(--line);justify-content:center}
+.item.open .dt b{font-size:10.5px;font-weight:700;color:var(--muted);font-family:var(--f-ui)}
+.item.open .ttl{color:var(--muted);font-weight:600}
+.item.open .val{color:var(--muted)}
 
 .empty{border:1px dashed var(--line);border-radius:16px;padding:26px 20px;text-align:center;color:var(--muted-dim);
   font-size:13.5px;margin-top:10px}
@@ -240,11 +250,12 @@ button{background:none;border:0;cursor:pointer}
 
 <main class="wrap">
   <section class="balance" id="bal">
-    <div class="lab">คงเหลือในมือ</div>
+    <div class="carry" id="carryrow" hidden><span>ยกมาจากเดือนที่แล้ว</span><b class="num" id="v-carry">0</b></div>
+    <div class="lab" id="v-lab">คงเหลือในมือ</div>
     <div class="big num"><span class="cur">฿</span><span id="v-left">0</span></div>
     <div class="bsplit">
-      <div><span>รับมา</span><b class="num" id="v-in">0</b></div>
-      <div><span>ใช้ไป</span><b class="num" id="v-out">0</b></div>
+      <div><span>รับเดือนนี้</span><b class="num" id="v-in">0</b></div>
+      <div><span>ใช้เดือนนี้</span><b class="num" id="v-out">0</b></div>
     </div>
   </section>
 
@@ -477,13 +488,15 @@ function monthKeys(){
 }
 
 /* ---------- render ---------- */
+/* ยอดยกมา = ผลรวมทุกอย่างที่เกิดก่อนวันที่ 1 ของเดือนที่เลือก */
+function carryInto(ym, all){
+  const before = (all || live()).filter(r => r.date < ym + "-01");
+  return {before: before, carry: sumOf(before, "in") - sumOf(before, "out")};
+}
+const signed = v => (v < 0 ? "-" : "") + money(Math.abs(v));
+
 function render(){
   const all = live();
-  const got = sumOf(all, "in"), spent = sumOf(all, "out"), left = got - spent;
-  $("#v-left").textContent = left < 0 ? "-" + money(-left) : money(left);
-  $("#v-in").textContent = money(got);
-  $("#v-out").textContent = money(spent);
-  $("#bal").classList.toggle("neg", left < 0);
 
   const keys = monthKeys();
   const cur = ymOf(today());
@@ -498,9 +511,21 @@ function render(){
   }
   renderMonths(keys);
 
+  /* ---- ปิดยอดเป็นเดือนๆ: ยกมา + รับเดือนนี้ − ใช้เดือนนี้ = คงเหลือสิ้นเดือน ---- */
+  const {before, carry} = carryInto(month, all);
   const rows = all.filter(r => ymOf(r.date) === month)
     .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.createdAt||0) - (a.createdAt||0));
-  const mOut = sumOf(rows, "out"), mIn = sumOf(rows, "in");
+  const mIn = sumOf(rows, "in"), mOut = sumOf(rows, "out");
+  const closing = carry + mIn - mOut;
+
+  $("#carryrow").hidden = !before.length;
+  $("#v-carry").textContent = signed(carry);
+  $("#v-lab").textContent = month === cur ? "คงเหลือในมือ" : `คงเหลือสิ้นเดือน ${monthLabel(month)}`;
+  $("#v-left").textContent = signed(closing);
+  $("#v-in").textContent  = money(mIn);
+  $("#v-out").textContent = money(mOut);
+  $("#bal").classList.toggle("neg", closing < 0);
+
   $("#mtot").textContent = rows.length
     ? (mIn ? `รับ ฿${money(mIn)} · ใช้ ฿${money(mOut)}` : `ใช้ไป ฿${money(mOut)}`)
     : "";
@@ -509,10 +534,12 @@ function render(){
   feed.innerHTML = "";
   if (!rows.length) {
     feed.innerHTML = `<div class="empty">ยังไม่มีรายการในเดือน ${monthLabel(month)}</div>`;
-  } else {
+  }
+  if (rows.length || before.length) {
     const list = document.createElement("div");
     list.className = "list";
     rows.forEach(r => list.appendChild(rowEl(r)));
+    if (before.length) list.appendChild(openingEl(carry));   /* ปิดท้ายลิสต์ด้วยยอดยกมา */
     feed.appendChild(list);
   }
 
@@ -525,6 +552,18 @@ function render(){
   const parts = [`ทั้งหมด ${all.length} รายการ`];
   if (bytes > 300 * 1024) parts.push(`ข้อมูล+สลิป ${(bytes/1024/1024).toFixed(1)} MB`);
   $("#meta").textContent = parts.join(" · ");
+}
+
+/* แถวปิดท้ายลิสต์ บอกว่ายอดตั้งต้นของเดือนนี้ยกมาเท่าไหร่ */
+function openingEl(carry){
+  const el = document.createElement("div");
+  el.className = "item open";
+  el.innerHTML =
+    `<span class="dt"><b>ยกมา</b></span>` +
+    `<span class="mid"><span class="ttl">ยกยอดจากเดือนที่แล้ว</span>` +
+      `<span class="sub">คงเหลือ ณ สิ้นเดือน ${esc(monthLabel(shiftMonth(month, -1)))}</span></span>` +
+    `<span class="val">${signed(carry)}</span>`;
+  return el;
 }
 
 function renderMonths(keys){
@@ -698,32 +737,39 @@ function rowsOfMonth(){
 }
 function summaryText(){
   const rows = rowsOfMonth();
+  const {before, carry} = carryInto(month);
   const mIn = sumOf(rows, "in"), mOut = sumOf(rows, "out");
-  const all = live(), left = sumOf(all, "in") - sumOf(all, "out");
-  const L = [`สรุป Advance — ${OWNER} · ${monthLabel(month)}`,
-             `รับ ฿${money(mIn)} · ใช้ ฿${money(mOut)}`,
-             `คงเหลือในมือ (สะสม) ฿${money(left)}`, ""];
+  const L = [`สรุป Advance — ${OWNER} · ${monthLabel(month)}`];
+  if (before.length) L.push(`ยกมาจากเดือนที่แล้ว ฿${signed(carry)}`);
+  L.push(`รับเดือนนี้ ฿${money(mIn)} · ใช้เดือนนี้ ฿${money(mOut)}`);
+  L.push(`คงเหลือสิ้นเดือน ฿${signed(carry + mIn - mOut)}`);
+  L.push("");
   rows.forEach(r => {
     const d = r.date.split("-").map(Number);
     L.push(`${d[2]} ${TH_M[d[1]-1]} | ${r.note || "-"} | ${r.type === "in" ? "+" : "-"}฿${money(+r.amount||0)}${r.photo ? " (มีสลิป)" : ""}`);
   });
   return L.join("\n");
 }
+
 function csvText(){
   const rows = rowsOfMonth();
+  const {before, carry} = carryInto(month);
+  const mIn = sumOf(rows, "in"), mOut = sumOf(rows, "out");
   const q = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
   const out = [["วันที่","ประเภท","รายละเอียด","สลิป","จำนวนเงิน"].map(q).join(",")];
+  if (before.length) out.push([q(""), q("ยกมาจากเดือนที่แล้ว"), q(`คงเหลือสิ้นเดือน ${monthLabel(shiftMonth(month, -1))}`), q(""), q(carry.toFixed(2))].join(","));
   rows.forEach(r => out.push([
     r.date, r.type === "in" ? "รายรับ" : "รายจ่าย", r.note || "", r.photo ? "มี" : "",
     (+r.amount || 0).toFixed(2),
   ].map(q).join(",")));
   out.push("");
-  out.push([q("รวมรายรับ"), "", "", "", q(sumOf(rows, "in").toFixed(2))].join(","));
-  out.push([q("รวมรายจ่าย"), "", "", "", q(sumOf(rows, "out").toFixed(2))].join(","));
-  const all = live();
-  out.push([q("คงเหลือในมือ (สะสม)"), "", "", "", q((sumOf(all,"in") - sumOf(all,"out")).toFixed(2))].join(","));
-  return "﻿" + out.join("\r\n");
+  if (before.length) out.push([q("ยกมาจากเดือนที่แล้ว"), "", "", "", q(carry.toFixed(2))].join(","));
+  out.push([q("รวมรายรับเดือนนี้"), "", "", "", q(mIn.toFixed(2))].join(","));
+  out.push([q("รวมรายจ่ายเดือนนี้"), "", "", "", q(mOut.toFixed(2))].join(","));
+  out.push([q("คงเหลือสิ้นเดือน"), "", "", "", q((carry + mIn - mOut).toFixed(2))].join(","));
+  return "\ufeff" + out.join("\r\n");
 }
+
 async function copyOut(text, okMsg){
   try { await navigator.clipboard.writeText(text); toast(okMsg); return true; } catch(e){ return false; }
 }
